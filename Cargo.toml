@@ -9,5 +9,11 @@ edition = "2021"
 anyhow = "1.0.75"
 mobot = "0.3.10"
 tokio = "1.33.0"
-reqwest = {version = "0.11", features = ["blocking"]}
 scraper = "0.18"
+headless_chrome = "1.0.7"
+env_logger = "0.10"
+log = { version = "0.4.20", features = ["release_max_level_info"] }
+article_scraper = "2.0.0"
+url = "2.4.1"
+reqwest = "0.11.22"
+regex = "1.10.2"

@@ -155,6 +155,7 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
 }
 
 async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
+    e.send_message("Начинаю сканирование новостей").await?;
     let mut state = state.get().write().await;
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {

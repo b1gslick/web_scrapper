@@ -7,7 +7,6 @@ WORKDIR /app
 # If the Cargo.toml or Cargo.lock files have not changed,
 # we can use the docker build cache and skip these (typically slow) steps.
 RUN USER=root cargo init .
-COPY .cargo .cargo
 COPY Cargo.toml Cargo.lock ./
 RUN cargo build
 

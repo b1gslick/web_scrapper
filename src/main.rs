@@ -10,8 +10,16 @@ struct Options {
 async fn help(e: Event, _state: State<Options>) -> Result<Action, anyhow::Error> {
     let message = e.update.get_message_or_post()?.clone();
     Ok(Action::ReplyText(format!(
-        "You were type not correct message {}",
-        message.text.unwrap()
+        "\n
+        ==================\n
+        Hello! For use me need to provide some options:\n
+        /add - add url, you can print it with ',' separator\n
+        /key_words - add key word for scrapping text into urls, also can use ',' for provide several word\n
+        /urls - check all urls which use for scrapping\n
+        /words - check all words for scrapping\n
+        /del_url url - delete current url\n
+        /del_w word - delete word from key_words\n
+        "
     )))
 }
 
@@ -112,22 +120,31 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
     }
 }
 
-async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
+async fn scan(_e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
     let state = state.get().read().await;
     for url in state.links.iter() {
-        let response = reqwest::blocking::get(url).unwrap().text().unwrap();
+        println!("{}", url);
+        // let response = reqwest::blocking::get(url).unwrap().text().unwrap();
 
-        let doc_body = Html::parse_document(&response);
+        let browser = headless_chrome::Browser::default().unwrap();
+        let tab = browser.new_tab().unwrap();
 
-        let title = Selector::parse(".titleline").unwrap();
+        let navigate = tab.navigate_to(url);
+        // println!("{}", navigate);
+        // let doc_body = Html::parse_document(&response);
+        // println!("{:?}", doc_body.tree);
 
-        for title in doc_body.select(&title) {
-            let titles = title.text().collect::<Vec<_>>();
-            println!("{}", titles[0])
-        }
+        // let title = Selector::parse(".titleline").unwrap();
+
+        // for title in doc_body.select(&title) {
+        //     let titles = title.text().collect::<Vec<_>>();
+        //     println!("{}", titles[0])
+        // }
     }
-    Ok(Action::Done)
+    Ok(Action::Next)
 }
+
+async fn get_html() {}
 
 #[tokio::main]
 async fn main() {
@@ -142,9 +159,9 @@ async fn main() {
         .add_route(Route::Message(Matcher::Prefix("/del_url".into())), delete)
         .add_route(Route::Message(Matcher::Prefix("/del_w".into())), delete)
         .add_route(Route::Message(Matcher::Prefix("/help".into())), help)
+        .add_route(Route::Message(Matcher::Prefix("/scan".into())), scan)
         .add_route(Route::Message(Matcher::Any), handle_any)
         .add_route(Route::EditedMessage(Matcher::Any), handle_any)
-        .add_route(Route::Message(Matcher::Prefix("/scan".into())), scan)
         .add_route(Route::Default, handlers::log_handler)
         .start()
         .await;

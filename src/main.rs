@@ -149,7 +149,8 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
                                 let url_path = anc.value().as_element().unwrap().attr("href");
                                 if url_path.is_some() {
                                     let striped_url = url_path.unwrap().replace("esg/", "");
-                                    let full_path = format!("{}{}", url, striped_url);
+                                    let path_url = url.replace("/ekologiya", "");
+                                    let full_path = format!("{}{}", path_url, striped_url);
                                     let news = News {
                                         title: node.value().as_text().unwrap().trim().to_string(),
                                         url: full_path.to_string(),

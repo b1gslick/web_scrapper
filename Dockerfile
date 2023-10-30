@@ -1,24 +1,22 @@
-# For local builds only (not for CI).
+FROM rust:1.72.1 
 
-FROM rust:1.72.1 as builder
-WORKDIR /app
+# 1. Create a new empty shell project
+RUN USER=root cargo new --bin web_finder
+WORKDIR /web_finder
 
-# Create a dummy project and build the app's dependencies.
-# If the Cargo.toml or Cargo.lock files have not changed,
-# we can use the docker build cache and skip these (typically slow) steps.
-RUN USER=root cargo init .
-COPY Cargo.toml Cargo.lock ./
-RUN cargo build
+# 2. Copy our manifests
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
 
-# Remove files with newer timestamps.
+# 3. Build only the dependencies to cache them
+RUN cargo build --release
 RUN rm src/*.rs
 
-COPY src src
-RUN cargo build
+# 4. Now that the dependency is built, copy your source code
+COPY ./src ./src
 
-FROM debian:stable-slim
-RUN groupadd scrapper && useradd -m -d /app -g scrapper scrapper
-USER scrapper
-WORKDIR /app
-COPY --chown=scrapper:scrapper --from=builder /app/target/debug/web_finder /app/
-ENTRYPOINT [ "/app/web_finder"]
+# 5. Build for release.
+RUN rm ./target/release/deps/web_finder*
+RUN cargo install --path .
+
+CMD ["web_finder"]

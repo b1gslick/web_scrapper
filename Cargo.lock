@@ -2056,7 +2056,6 @@ dependencies = [
  "anyhow",
  "headless_chrome",
  "mobot",
- "reqwest",
  "scraper",
  "tokio",
 ]

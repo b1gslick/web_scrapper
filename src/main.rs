@@ -1,24 +1,31 @@
 use mobot::*;
-use scraper::{Html, Selector};
 
 #[derive(Clone, Default, BotState)]
 struct Options {
     links: Vec<String>,
     key_words: Vec<String>,
+    old_news: Vec<News>,
 }
 
-async fn help(e: Event, _state: State<Options>) -> Result<Action, anyhow::Error> {
-    let message = e.update.get_message_or_post()?.clone();
+#[derive(Clone, Default, PartialEq)]
+struct News {
+    title: String,
+    url: String,
+}
+
+async fn help(_e: Event, _state: State<Options>) -> Result<Action, anyhow::Error> {
     Ok(Action::ReplyText(format!(
         "\n
-        ==================\n
+        ===============================================\n
         Hello! For use me need to provide some options:\n
         /add - add url, you can print it with ',' separator\n
         /key_words - add key word for scrapping text into urls, also can use ',' for provide several word\n
         /urls - check all urls which use for scrapping\n
-        /words - check all words for scrapping\n
+        /kw - check all words for scrapping\n
         /del_url url - delete current url\n
         /del_w word - delete word from key_words\n
+        /scan - scan urls with key words\n
+    ===============================================\n
         "
     )))
 }
@@ -35,12 +42,9 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
                     .split(',')
                     .map(|s| s.trim().to_string())
                     .collect();
-                println!("{:?}", striped_text);
 
                 for url in urls.iter() {
-                    println!("{}", url);
                     state.links.push(url.to_string());
-                    println!("{:?}", state.links)
                 }
                 Ok(Action::ReplyText(format!("Added: {}", striped_text)))
             } else if text.contains("/key_words") {
@@ -53,9 +57,7 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
                     .collect();
 
                 for kew_word in key_words.iter() {
-                    println!("{}", kew_word);
                     state.key_words.push(kew_word.to_string());
-                    println!("{:?}", state.key_words)
                 }
                 Ok(Action::ReplyText(format!("Added: {}", striped_text)))
             } else {
@@ -120,31 +122,58 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
     }
 }
 
-async fn scan(_e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
-    let state = state.get().read().await;
-    for url in state.links.iter() {
-        println!("{}", url);
-        // let response = reqwest::blocking::get(url).unwrap().text().unwrap();
-
+async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
+    let mut state = state.get().write().await;
+    let mut result_news: Vec<News> = vec![];
+    for url in state.links.clone().iter() {
         let browser = headless_chrome::Browser::default().unwrap();
         let tab = browser.new_tab().unwrap();
 
-        let navigate = tab.navigate_to(url);
-        // println!("{}", navigate);
-        // let doc_body = Html::parse_document(&response);
-        // println!("{:?}", doc_body.tree);
+        tab.navigate_to(url)?.wait_until_navigated()?;
 
-        // let title = Selector::parse(".titleline").unwrap();
+        let html_body = tab.wait_for_element("body").unwrap().get_content().unwrap();
 
-        // for title in doc_body.select(&title) {
-        //     let titles = title.text().collect::<Vec<_>>();
-        //     println!("{}", titles[0])
-        // }
+        let document = scraper::Html::parse_document(&html_body);
+
+        for node in document.tree.nodes() {
+            if node.value().is_text() {
+                for kw in state.clone().key_words.iter() {
+                    if node.value().as_text().unwrap().contains(kw)
+                        && !node.value().as_text().unwrap().contains("img")
+                    {
+                        if node.value().as_text().unwrap().len() > 300 {
+                            continue;
+                        }
+                        for anc in node.ancestors().into_iter() {
+                            if anc.value().is_element() {
+                                let url_path = anc.value().as_element().unwrap().attr("href");
+                                if url_path.is_some() {
+                                    let striped_url = url_path.unwrap().replace("esg/", "");
+                                    let full_path = format!("{}{}", url, striped_url);
+                                    let news = News {
+                                        title: node.value().as_text().unwrap().trim().to_string(),
+                                        url: full_path.to_string(),
+                                    };
+                                    if !result_news.contains(&news)
+                                        && !state.old_news.contains(&news)
+                                    {
+                                        result_news.push(news.clone());
+                                        state.old_news.push(news.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-    Ok(Action::Next)
+    for news in result_news.iter() {
+        e.send_message(format!("{}: {}", news.title, news.url))
+            .await?;
+    }
+    Ok(Action::Done)
 }
-
-async fn get_html() {}
 
 #[tokio::main]
 async fn main() {

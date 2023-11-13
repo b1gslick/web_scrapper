@@ -2490,8 +2490,6 @@ name = "web_finder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "headless_chrome",
- "mobot",
  "article_scraper",
  "env_logger",
  "headless_chrome",

@@ -27,6 +27,10 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+          URLS: ${{ env.URLS }}
+          KW: ${{ env.KW }}
         with:
           context: .
           file: ./Dockerfile

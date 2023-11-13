@@ -85,7 +85,7 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
                 let key_words: Vec<String> = striped_text
                     .trim()
                     .split(',')
-                    .map(|s| s.trim().to_string())
+                    .map(|s| s.replace(['"', '\\'], ""))
                     .collect();
 
                 for kew_word in key_words.iter() {
@@ -155,6 +155,7 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
 }
 
 async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
+    e.send_message("Начинаю поиск новостей...").await?;
     let mut state = state.get().write().await;
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
@@ -173,14 +174,14 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
                         .await?;
                 }
             }
-            e.send_message("Сканироание завершено!").await?;
+            e.send_message("поиск завершен").await?;
             if result_news.is_empty() {
                 e.send_message("Новых новостей не найдено, пожалуйста попробуйте позже.")
                     .await?;
             }
         }
         Err(urls_for_check) => {
-            e.send_message("Сканироание завершено c ошибкой, пожалуйста повторите попытку.")
+            e.send_message("Поиск завершен c ошибкой, пожалуйста повторите попытку.")
                 .await?;
             println! {"Catch error {:?}", urls_for_check}
         }

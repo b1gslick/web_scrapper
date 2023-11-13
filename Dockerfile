@@ -1,5 +1,6 @@
 FROM rust:bookworm as builder
 
+
 # 1. Create a new empty shell project
 RUN USER=root cargo new --bin web_finder
 WORKDIR /web_finder

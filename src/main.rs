@@ -6,6 +6,7 @@ use crate::helpers::url_helper::News;
 
 pub mod helpers;
 
+
 #[derive(Clone, Default, BotState)]
 struct Options {
     links: Vec<String>,
@@ -185,6 +186,10 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
                 .await?;
             println! {"Catch error {:?}", urls_for_check}
         }
+    }
+    for news in result_news.iter() {
+        e.send_message(format!("{}: {}", news.title, news.url))
+            .await?;
     }
     Ok(Action::Done)
 }

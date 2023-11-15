@@ -1,3 +1,8 @@
+ARG PROD_TOKEN
+ARG URLS
+ARG KW
+ARG TEST
+
 FROM rust:bookworm as builder
 
 # 1. Create a new empty shell project
@@ -22,10 +27,7 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-ARG TOKEN
-ARG URLS
-ARG KW
-ARG PROD_TOKEN
+RUN echo $TEST
 
 ENV TOKEN=$PROD_TOKEN
 ENV URLS=$URLS

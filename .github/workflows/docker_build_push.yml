@@ -34,10 +34,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            TOKEN=${{ secrets.PROD_TOKEN }}
             PROD_TOKEN=${{ secrets.PROD_TOKEN }}
             KW=${{ secrets.KW }}
             URLS=${{ secrets.URLS }}
+            TEST="testing"
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest

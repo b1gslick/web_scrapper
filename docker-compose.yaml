@@ -2,6 +2,7 @@
 services:
   server:
     image: t1mon1106/web_scraper:main
+    restart: always
     pull_policy: always
     environment:
       - RUST_LOG=info

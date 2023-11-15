@@ -34,9 +34,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            TOKEN=${{ secrets.token }}
-            KW=${{ vars.KW }}
-            URLS=${{ vars.URLS }}
+            TOKEN=${{ secrets.PROD_TOKEN }}
+            KW=${{ secrets.KW }}
+            URLS=${{ secrets.URLS }}
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -50,4 +50,4 @@ jobs:
           ssh_host: ${{ secrets.UBUNTU_URL_SSH }}
           ssh_private_key: ${{ secrets.UBUNTU_SSH_PRIVATE_KEY }}
           ssh_user: ${{ secrets.UBUNTU_SSH_USER }}
-          docker_compose_prefix: web-scraper
+          docker_compose_prefix: web_scraper

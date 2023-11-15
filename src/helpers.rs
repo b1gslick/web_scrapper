@@ -57,6 +57,12 @@ pub mod url_helper {
     }
 
     pub fn is_valid_url(url: &str) -> bool {
+        if url.contains("www.pnp.ru") {
+            if url.contains(".html") {
+                return true;
+            }
+            return false;
+        }
         let re = Regex::new(r"^((http[s]?|ftp):\/)?\/?([^:\/\s]+)(:([^\/]*))?((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?$").unwrap();
         let Some(_urls) = re.captures(url) else {return false};
         true
@@ -93,7 +99,7 @@ pub mod url_helper {
                         if anc.value().is_element() {
                             if let Some(url_path) = anc.value().as_element().unwrap().attr("href") {
                                 let full_news_path = build_url(url_path, url);
-                                if is_has_ban_word(url_path) {
+                                if is_has_ban_word(url_path) && !url_path.contains("www.pnp.ru") {
                                     continue;
                                 }
 

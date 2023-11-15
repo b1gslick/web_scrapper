@@ -6,3 +6,4 @@ services:
     pull_policy: always
     environment:
       - RUST_LOG=info
+      - TOKEN=$PROD_TOKEN

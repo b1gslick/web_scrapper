@@ -1,7 +1,3 @@
-ARG PROD_TOKEN
-ARG URLS
-ARG KW
-ARG TEST
 
 FROM rust:bookworm as builder
 
@@ -27,11 +23,7 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-RUN echo $TEST
-
-ENV TOKEN=$PROD_TOKEN
-ENV URLS=$URLS
-ENV KW=$KW
+ARG TOKEN
 
 RUN apt-get update; apt-get clean
 

@@ -2,6 +2,7 @@ use mobot::*;
 
 use crate::helpers::url_helper::get_news;
 use crate::helpers::url_helper::get_urls;
+use crate::helpers::url_helper::lines_from_file;
 use crate::helpers::url_helper::News;
 
 pub mod helpers;
@@ -15,16 +16,8 @@ struct Options {
 }
 
 async fn start_ecology(_e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
-    let initial_url: Vec<String> = std::env::var("URLS")
-        .unwrap()
-        .split(',')
-        .map(str::to_string)
-        .collect();
-    let initial_key_words: Vec<String> = std::env::var("KW")
-        .unwrap()
-        .split(',')
-        .map(str::to_string)
-        .collect();
+    let initial_url: Vec<String> = lines_from_file("urls.txt").expect("Can't read urls file");
+    let initial_key_words: Vec<String> = lines_from_file("kw.txt").expect("Can't read kw file");
     let mut state = state.get().write().await;
     state.links = initial_url.clone();
     state.key_words = initial_key_words.clone();

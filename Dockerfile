@@ -40,6 +40,8 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 # Install Chrome.
 RUN apt-get update && apt-get -y install google-chrome-stable
 
+COPY ./src/config ./src/config
+
 ARG TOKEN
 ENV TOKEN ${TOKEN}
 

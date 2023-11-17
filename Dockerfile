@@ -1,9 +1,8 @@
-ARG PROD_TOKEN
-ARG URLS
-ARG KW
-ARG TEST
 
 FROM rust:bookworm as builder
+
+ARG TOKEN
+ENV TOKEN ${TOKEN}
 
 # 1. Create a new empty shell project
 RUN USER=root cargo new --bin web_finder
@@ -24,16 +23,10 @@ COPY ./src ./src
 RUN rm ./target/release/deps/web_finder*
 RUN cargo build --release
 
-
 FROM debian:bookworm-slim
 
-RUN echo $TEST
-
-ENV TOKEN=$PROD_TOKEN
-ENV URLS=$URLS
-ENV KW=$KW
-
 RUN apt-get update; apt-get clean
+
 
 # Install wget.
 RUN apt-get install -y wget
@@ -46,6 +39,11 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 
 # Install Chrome.
 RUN apt-get update && apt-get -y install google-chrome-stable
+
+COPY ./src/config ./src/config
+
+ARG TOKEN
+ENV TOKEN ${TOKEN}
 
 COPY --from=builder /web_finder/target/release/web_finder .
 

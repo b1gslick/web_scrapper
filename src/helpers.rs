@@ -3,6 +3,12 @@ pub mod url_helper {
     use headless_chrome::{Browser, LaunchOptionsBuilder};
     use regex::Regex;
     // use std::any::type_name;
+    use std::{
+        env,
+        fs::File,
+        io::{self, BufRead, BufReader},
+        path::{Path, PathBuf},
+    };
     use url::Url;
 
     #[derive(Clone, Default, PartialEq)]
@@ -119,47 +125,21 @@ pub mod url_helper {
     }
 
     fn is_has_ban_word(url: &str) -> bool {
-        let ban_words: Vec<&str> = vec![
-            "https://",
-            "tel:+",
-            "mailto:",
-            "utm_source=",
-            "/archive",
-            "/info/",
-            "/copyright",
-            "/info/",
-            "http://",
-            "/tass-today",
-            "/press",
-            "/contacts",
-            "/career",
-            "/ads",
-            "/pravila-citirovaniya",
-            "/recommend",
-            "/daily/",
-            "/authors/",
-            "/rubric/",
-            "/rusfond.ru",
-            "?from=tag",
-            "?from=logo",
-            "#",
-            "/lk/",
-            "/LK/",
-            "/ad",
-            "/regions",
-            "/fm/player",
-            "/t.me/",
-            "/vk.com/",
-            "/companynews",
-            "//",
-            "/politika-obrabotki-personalnyh-dannyh",
-        ];
+        let ban_words: Vec<String> =
+            lines_from_file("black_words.txt").expect("Could not load lines");
         for bw in ban_words.iter() {
             if url.contains(bw) {
                 return true;
             }
         }
         false
+    }
+    pub fn lines_from_file(filename: &str) -> io::Result<Vec<String>> {
+        let mut cur_dir = env::current_dir()?;
+        cur_dir.push("src");
+        cur_dir.push("config");
+        cur_dir.push(filename);
+        BufReader::new(File::open(cur_dir)?).lines().collect()
     }
     // fn type_of<T>(_: T) -> &'static str {
     //     type_name::<T>()

@@ -150,6 +150,24 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
 async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
     e.send_message("Начинаю поиск новостей...").await?;
     let mut state = state.get().write().await;
+    if state.links.is_empty() {
+        e.send_message(
+            "Список сайтов для поиска пустой... 
+            \nчто бы добавить сайты нужно ввести команду /add <url>
+            \n для более детальной информации введите /help",
+        )
+        .await?;
+        return Ok(Action::Done);
+    };
+    if state.key_words.is_empty() {
+        e.send_message(
+            "Список ключевых слов для поиска пустой... 
+            \nчто бы добавить новые слова нужно ввести команду /key_words <word>
+            \n для более детальной информации введите /help",
+        )
+        .await?;
+        return Ok(Action::Done);
+    }
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
             for for_check_url in urls_for_check.iter() {

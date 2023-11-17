@@ -27,7 +27,7 @@ ARG TOKEN
 
 RUN apt-get update; apt-get clean
 ENV TOKEN=$TOKEN
-RUN ECHO "TOKEN ${TOKEN}"
+RUN echo "TOKEN $TOKEN"
 
 # Install wget.
 RUN apt-get install -y wget

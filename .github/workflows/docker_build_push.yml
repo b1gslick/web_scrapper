@@ -1,10 +1,9 @@
 name: Docker
 
 on:
-  [push]
-  # push:
-  # branches:
-  # - main
+  push:
+    branches:
+      - main
 
 jobs:
   push_to_registry:
@@ -35,7 +34,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            "TOKEN=${{ secrets.TEST_TOKEN }}"
+            "TOKEN=${{ secrets.PROD_TOKEN }}"
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest

@@ -9,8 +9,6 @@ on:
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
-    env:
-      TOKEN: ${{ secrets.TEST_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -37,7 +35,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            TOKEN_VARS=$TOKEN
+            "TOKEN_VARS=${{ secrets.TEST_TOKEN }}"
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest

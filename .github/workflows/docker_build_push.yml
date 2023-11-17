@@ -36,8 +36,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args:
-            - TOKEN_VARS=$TOKEN
+          build-args: |
+            TOKEN_VARS=$TOKEN
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest

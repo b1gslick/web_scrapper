@@ -35,7 +35,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            "TOKEN_VARS=${{ secrets.TEST_TOKEN }}"
+            "TOKEN=${{ secrets.TEST_TOKEN }}"
   Deploy:
     name: Deploy
     runs-on: ubuntu-latest

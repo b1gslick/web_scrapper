@@ -175,7 +175,6 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
         return Ok(Action::Done);
     }
     e.send_message("Начинаю поиск новостей...").await?;
-
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
             for for_check_url in urls_for_check.iter() {

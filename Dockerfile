@@ -20,14 +20,12 @@ COPY ./src ./src
 RUN rm ./target/release/deps/web_finder*
 RUN cargo build --release
 
-
 FROM debian:bookworm-slim
 
-ARG TOKEN
-
 RUN apt-get update; apt-get clean
-ENV TOKEN =$TOKEN
-RUN echo "TOKEN $TOKEN"
+
+ARG TOKEN_VARS
+ENV TOKEN=$TOKEN_VARS
 
 # Install wget.
 RUN apt-get install -y wget

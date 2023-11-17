@@ -26,7 +26,7 @@ FROM debian:bookworm-slim
 ARG TOKEN
 
 RUN apt-get update; apt-get clean
-ENV TOKEN=$TOKEN
+ENV TOKEN =$TOKEN
 RUN echo "TOKEN $TOKEN"
 
 # Install wget.

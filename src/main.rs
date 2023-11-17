@@ -62,6 +62,10 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
             if text.contains("/add") {
                 let mut state = state.get().write().await;
                 let striped_text = text.replace("/add", "");
+                if striped_text.is_empty() {
+                    return Ok(Action::ReplyText("Вы добавили пустой урл".to_string()));
+                }
+
                 let urls: Vec<String> = striped_text
                     .trim()
                     .split(',')
@@ -75,6 +79,9 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
             } else if text.contains("/key_words") {
                 let mut state = state.get().write().await;
                 let striped_text = text.replace("/key_words", "");
+                if striped_text.is_empty() {
+                    return Ok(Action::ReplyText("Вы добавили пустое слово".to_string()));
+                }
                 let key_words: Vec<String> = striped_text
                     .trim()
                     .split(',')
@@ -148,7 +155,6 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
 }
 
 async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
-    e.send_message("Начинаю поиск новостей...").await?;
     let mut state = state.get().write().await;
     if state.links.is_empty() {
         e.send_message(
@@ -168,6 +174,8 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
         .await?;
         return Ok(Action::Done);
     }
+    e.send_message("Начинаю поиск новостей...").await?;
+
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
             for for_check_url in urls_for_check.iter() {

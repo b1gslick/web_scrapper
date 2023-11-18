@@ -1,6 +1,0 @@
----
-- name: Update telegram bot
-  hosts: server
-  tasks:
-    - name: test
-      command: echo "Hello world"

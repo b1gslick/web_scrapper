@@ -3,22 +3,26 @@ pub mod url_helper {
     use headless_chrome::{Browser, LaunchOptionsBuilder};
     use regex::Regex;
     // use std::any::type_name;
+    use serde::{Deserialize, Serialize};
     use std::{
         env,
         fs::File,
         io::{self, BufRead, BufReader},
-        path::{Path, PathBuf},
     };
     use url::Url;
 
-    #[derive(Clone, Default, PartialEq)]
+    #[derive(Clone, Default, PartialEq, Serialize, Deserialize, Debug)]
     pub struct News {
         pub title: String,
         pub url: String,
     }
 
-    pub async fn get_news(urls: Vec<String>, kw: Vec<String>) -> Result<Vec<News>, anyhow::Error> {
+    pub async fn get_news(
+        urls: Vec<String>,
+        kw: Vec<String>,
+    ) -> Result<(Vec<News>, Vec<String>), anyhow::Error> {
         let mut result: Vec<News> = vec![];
+        let mut already_checked_url: Vec<String> = vec![];
         for checked_url in urls.iter() {
             let article_scraper = ArticleScraper::new(None).await;
             let url = Url::parse(checked_url).unwrap();
@@ -36,6 +40,7 @@ pub mod url_helper {
                             result.push(make_news(&title, checked_url));
                         }
                     }
+                    already_checked_url.push(checked_url.clone());
                 }
                 Err(..) => {
                     println!("Can't parse url {}", url);
@@ -44,7 +49,7 @@ pub mod url_helper {
             }
         }
 
-        Ok(result)
+        Ok((result, already_checked_url))
     }
 
     pub fn make_news(title: &str, url: &str) -> News {

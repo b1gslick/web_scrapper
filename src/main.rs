@@ -1,18 +1,26 @@
 use mobot::*;
 
+use crate::db::databse_mod::get_old_data;
+use crate::db::databse_mod::write_data;
+use crate::db::databse_mod::DbOptions;
 use crate::helpers::url_helper::get_news;
 use crate::helpers::url_helper::get_urls;
 use crate::helpers::url_helper::lines_from_file;
 use crate::helpers::url_helper::News;
+use dotenv::dotenv;
+use serde::{Deserialize, Serialize};
 
+pub mod db;
 pub mod helpers;
 
-#[derive(Clone, Default, BotState)]
-struct Options {
-    links: Vec<String>,
-    key_words: Vec<String>,
-    old_news: Vec<News>,
-    already_checked: Vec<String>,
+#[derive(Clone, Default, BotState, Serialize, Deserialize, Debug)]
+pub struct Options {
+    pub name: String,
+    pub links: Vec<String>,
+    pub key_words: Vec<String>,
+    pub old_news: Vec<News>,
+    pub already_checked: Vec<String>,
+    pub db_options: DbOptions,
 }
 
 async fn start_ecology(_e: Event, state: State<Options>) -> Result<Action, anyhow::Error> {
@@ -21,6 +29,8 @@ async fn start_ecology(_e: Event, state: State<Options>) -> Result<Action, anyho
     let mut state = state.get().write().await;
     state.links = initial_url.clone();
     state.key_words = initial_key_words.clone();
+
+    write_to_db(state.clone()).await;
     Ok(Action::ReplyText(format!(
         "\n
         Привет загружена стартовая конфигурация для новостей по экологии!\n
@@ -75,6 +85,7 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
                 for url in urls.iter() {
                     state.links.push(url.to_string());
                 }
+                write_to_db(state.clone()).await;
                 Ok(Action::ReplyText(format!("Added: {}", striped_text)))
             } else if text.contains("/key_words") {
                 let mut state = state.get().write().await;
@@ -91,6 +102,7 @@ async fn handle_any(e: Event, state: State<Options>) -> Result<Action, anyhow::E
                 for kew_word in key_words.iter() {
                     state.key_words.push(kew_word.to_string());
                 }
+                write_to_db(state.clone()).await;
                 Ok(Action::ReplyText(format!("Added: {}", striped_text)))
             } else {
                 Ok(Action::Done)
@@ -131,6 +143,7 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
             .position(|x| *x == striped_text.trim())
             .unwrap();
         state.links.remove(index);
+        write_to_db(state.clone()).await;
         Ok(Action::ReplyText(format!(
             "Deleted: {}, \n New urls list is: {:?}",
             message.text.unwrap(),
@@ -144,6 +157,8 @@ async fn delete(e: Event, state: State<Options>) -> Result<Action, anyhow::Error
             .position(|x| *x == striped_text.trim())
             .unwrap();
         state.key_words.remove(index);
+        write_to_db(state.clone()).await;
+
         Ok(Action::ReplyText(format!(
             "Deleted: {}, \n New words list is: {:?}",
             message.text.unwrap(),
@@ -177,14 +192,14 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
     e.send_message("Начинаю поиск новостей...").await?;
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
-            for for_check_url in urls_for_check.iter() {
-                state.already_checked.push(for_check_url.to_string())
-            }
-
-            let result_news: Vec<News> = get_news(urls_for_check.clone(), state.key_words.clone())
+            let result = get_news(urls_for_check.clone(), state.key_words.clone())
                 .await
                 .unwrap();
 
+            let result_news: Vec<News> = result.0;
+            for checkde_url in result.1.iter() {
+                state.already_checked.push(checkde_url.to_string())
+            }
             for news in result_news.iter() {
                 if !state.old_news.contains(news) {
                     state.old_news.push(news.clone());
@@ -201,19 +216,54 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
         Err(urls_for_check) => {
             e.send_message("Поиск завершен c ошибкой, пожалуйста повторите попытку.")
                 .await?;
-            println! {"Catch error {:?}", urls_for_check}
+            log::error! {"Catch error {:?}", urls_for_check}
         }
     }
+    write_to_db(state.clone()).await;
+
     Ok(Action::Done)
+}
+
+async fn write_to_db(state: Options) {
+    let state_to_db = Options {
+        name: "eco".to_string(),
+        links: state.links.clone(),
+        key_words: state.key_words.clone(),
+        old_news: state.old_news.clone(),
+        already_checked: state.already_checked.clone(),
+        db_options: state.db_options.clone(),
+    };
+    let result = write_data(state_to_db, state.db_options.clone()).await;
+    log::info!("Write to database {:?}", result);
 }
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
+    dotenv().ok();
 
     let client = Client::new(std::env::var("TOKEN").unwrap());
+    let db_options = DbOptions {
+        db_name: "web-finder".to_string(),
+        collection_name: "options".to_string(),
+    };
+    let result = get_old_data(db_options.clone()).await;
+    log::info!("{:?}", result);
+    let loaded_state = match result {
+        Ok(state) => state,
+        Err(_) => Options {
+            name: "ecology".to_string(),
+            links: vec![],
+            key_words: vec![],
+            old_news: vec![],
+            already_checked: vec![],
+            db_options: db_options.clone(),
+        },
+    };
+    log::info!("Loaded state from db: {:?}", loaded_state);
 
     Router::new(client)
+        .with_state(loaded_state)
         .add_route(Route::Message(Matcher::Prefix("/urls".into())), check_urls)
         .add_route(
             Route::Message(Matcher::Prefix("/kw".into())),

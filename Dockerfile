@@ -2,7 +2,9 @@
 FROM rust:bookworm as builder
 
 ARG TOKEN
-ENV TOKEN ${TOKEN}
+ARG MONGO_HOST
+ENV TOKEN=$TOKEN
+ENV MONGO_HOST=$MONGO_HOST
 
 # 1. Create a new empty shell project
 RUN USER=root cargo new --bin web_finder
@@ -27,6 +29,10 @@ FROM debian:bookworm-slim
 
 RUN apt-get update; apt-get clean
 
+ARG TOKEN
+ARG MONGO_HOST
+ENV TOKEN=$TOKEN
+ENV MONGO_HOST=$MONGO_HOST
 
 # Install wget.
 RUN apt-get install -y wget
@@ -41,9 +47,6 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 RUN apt-get update && apt-get -y install google-chrome-stable
 
 COPY ./src/config ./src/config
-
-ARG TOKEN
-ENV TOKEN ${TOKEN}
 
 COPY --from=builder /web_finder/target/release/web_finder .
 

@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod db;
 pub mod helpers;
+pub mod types;
 
 #[derive(Clone, Default, BotState, Serialize, Deserialize, Debug)]
 pub struct Options {
@@ -192,31 +193,26 @@ async fn scan(e: Event, state: State<Options>) -> Result<Action, anyhow::Error> 
     e.send_message("Начинаю поиск новостей...").await?;
     match get_urls(state.links.clone(), &state.already_checked) {
         Ok(urls_for_check) => {
-            let result = get_news(urls_for_check.clone(), state.key_words.clone())
-                .await
-                .unwrap();
-
-            let result_news: Vec<News> = result.0;
-            for checkde_url in result.1.iter() {
-                state.already_checked.push(checkde_url.to_string())
-            }
-            for news in result_news.iter() {
-                if !state.old_news.contains(news) {
-                    state.old_news.push(news.clone());
-                    e.send_message(format!("{}: {}", news.title, news.url))
-                        .await?;
+            for url in urls_for_check {
+                match get_news(&url, state.key_words.clone()).await {
+                    Ok(news) => {
+                        state.already_checked.push(url.to_string());
+                        if !state.old_news.contains(&news) {
+                            state.old_news.push(news.clone());
+                            e.send_message(format!("{}: {}", news.title, news.url))
+                                .await?;
+                        }
+                    }
+                    Err(error) => {
+                        log::error! {"Catch error for url {}\n {:?}",url, error}
+                    }
                 }
             }
             e.send_message("поиск завершен").await?;
-            if result_news.is_empty() {
-                e.send_message("Новых новостей не найдено, пожалуйста попробуйте позже.")
-                    .await?;
-            }
         }
-        Err(urls_for_check) => {
+        Err(_) => {
             e.send_message("Поиск завершен c ошибкой, пожалуйста повторите попытку.")
                 .await?;
-            log::error! {"Catch error {:?}", urls_for_check}
         }
     }
     write_to_db(state.clone()).await;
@@ -243,9 +239,11 @@ async fn main() {
     dotenv().ok();
 
     let client = Client::new(std::env::var("TOKEN").unwrap());
+    let db_name = std::env::var("DB_NAME").unwrap_or("web-finder".to_string());
+    let collection_name = std::env::var("COL_NAME").unwrap_or("options".to_string());
     let db_options = DbOptions {
-        db_name: "web-finder".to_string(),
-        collection_name: "options".to_string(),
+        db_name,
+        collection_name,
     };
     let result = get_old_data(db_options.clone()).await;
     log::info!("{:?}", result);

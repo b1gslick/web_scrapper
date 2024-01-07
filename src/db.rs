@@ -19,7 +19,17 @@ pub mod databse_mod {
     async fn get_connect() -> Result<mongodb::Client, Box<dyn Error>> {
         dotenv().ok();
 
-        let client_uri = env::var("MONGO_HOST").expect("You must set the mongo URL");
+        // let DB_SRV = env::var("DB_SRV").unwrap_or("web-scraper".to_string());
+        let db_pass = env::var("DB_PASS").unwrap_or("password".to_string());
+        let db_host = env::var("DB_HOST").unwrap_or("localhost".to_string());
+        let db_port = env::var("DB_PORT").unwrap_or("27017".to_string());
+        let db_user = env::var("DB_USER").unwrap_or("web-finder".to_string());
+        let db_name = env::var("DB_NAME").unwrap_or("options".to_string());
+
+        let client_uri = format!(
+            "mongodb://{}:{}@{}:{}/{}",
+            db_user, db_pass, db_host, db_port, db_name
+        );
 
         let options =
             ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())

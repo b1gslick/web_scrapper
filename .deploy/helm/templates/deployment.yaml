@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm.fullname" . }}
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "helm.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "helm.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.mongodb.db_pass.secretName }}
+                  key: {{ .Values.env.mongodb.db_pass.key }}
+            - name: DB_HOST
+              value: {{ .Values.env.mongodb.host }}
+            - name: DB_PORT
+              value: {{ .Values.env.mongodb.port }}
+            - name: DB_SRV
+              value: {{ .Values.env.mongodb.db_srv }}
+            - name: DB_NAME
+              value: {{ .Values.env.mongodb.db_name }}
+            - name: COL_NAME
+              value: {{ .Values.env.mongodb.col_name }}
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.tokenApi.secretName }}
+                  key: {{ .Values.env.tokenApi.key }}
+            - name: RUST_LOG
+              value: {{ .Values.env.logLevel | upper }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

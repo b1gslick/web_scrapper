@@ -1,5 +1,5 @@
 ---
-name: Test,Build,Deploy
+name: Test,Build
 
 on: [push]
 
@@ -59,26 +59,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            "TOKEN=${{ secrets.PROD_TOKEN }}"
-            "MONGO_HOST=${{ secrets.MONGO_HOST }}"
-  Deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: [push_to_registry]
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Docker-Compose Remote Deployment
-        uses: alex-ac/github-action-ssh-docker-compose@master
-        with:
-          ssh_host: ${{ secrets.UBUNTU_URL_SSH }}
-          ssh_private_key: ${{ secrets.UBUNTU_SSH_PRIVATE_KEY }}
-          ssh_user: ${{ secrets.UBUNTU_SSH_USER }}
-          docker_compose_prefix: web_scraper

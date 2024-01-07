@@ -1,0 +1,14 @@
+apiVersion: v2
+name: helm
+description: Helm chart for scrapper telegram bot for scrapping news from internet
+
+type: application
+
+version: 0.1.0
+
+appVersion: "0.1.0"
+
+dependencies:
+  - name: mongodb
+    version: 7.8.10
+    repository: https://charts.helm.sh/stable

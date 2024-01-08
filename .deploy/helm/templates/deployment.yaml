@@ -40,20 +40,20 @@ spec:
                   name: {{ .Values.env.mongodb.db_pass.secretName }}
                   key: {{ .Values.env.mongodb.db_pass.key }}
             - name: DB_HOST
-              value: {{ .Values.env.mongodb.host }}
+              value: "{{ .Values.env.mongodb.host }}"
             - name: DB_PORT
-              value: {{ .Values.env.mongodb.port }}
+              value: "{{ .Values.env.mongodb.port }}"
             - name: DB_SRV
-              value: {{ .Values.env.mongodb.db_srv }}
+              value: "{{ .Values.env.mongodb.db_srv }}"
             - name: DB_NAME
-              value: {{ .Values.env.mongodb.db_name }}
+              value: "{{ .Values.env.mongodb.db_name }}"
             - name: COL_NAME
-              value: {{ .Values.env.mongodb.col_name }}
+              value: "{{ .Values.env.mongodb.col_name }}"
             - name: TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.env.tokenApi.secretName }}
-                  key: {{ .Values.env.tokenApi.key }}
+                  key: "{{ .Values.env.tokenApi.key }}"
             - name: RUST_LOG
               value: {{ .Values.env.logLevel | upper }}
       {{- with .Values.nodeSelector }}

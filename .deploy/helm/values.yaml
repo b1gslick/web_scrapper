@@ -12,19 +12,17 @@ fullnameOverride: ""
 
 env:
   logLevel: DEBUG
-  # secretName
   tokenApi:
     secretName: bot-api
     key: token
   mongodb:
-    host: localhost
-    port: 27017
+    host: webscraper.cm9kncf.mongodb.net
     db_srv: web-scraper
     db_pass:
       secretName: bot-api
       key: db_password
     db_name: web-finder
-    col_name: option
+    col_name: options2
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -63,18 +61,9 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
 
-nodeSelector: {}
+nodeSelector:
+  kubernetes.io/hostname: worker-big
 
 tolerations: []
 
 affinity: {}
-
-mongodb:
-  enabled: true
-  extraVolumes:
-    - name: "init-database"
-      configMap:
-        name: create-db-configmap
-  extraVolumeMounts:
-    - name: "init-database"
-      mountPath: "/docker-entrypoint-initdb.d/"

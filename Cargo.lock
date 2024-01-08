@@ -3038,6 +3038,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "headless_chrome",
+ "libxml",
  "log",
  "mobot",
  "mongodb",

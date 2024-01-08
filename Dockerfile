@@ -1,60 +1,42 @@
+FROM rust:bookworm as builder
 
-ARG RUST_VERSION=1.74.1
-# ARG TARGET=x86_64-unknown-linux-musl
-FROM rust:${RUST_VERSION}-slim-bullseye AS build
-ARG TARGET
+# 1. Create a new empty shell project
+RUN USER=root cargo new --bin web_finder
+WORKDIR /web_finder
 
-WORKDIR /app
+# 2. Copy our manifests
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
 
-RUN apt-get update && \
-  apt-get install -y  pkg-config cmake make g++ libssl-dev musl-tools musl-dev build-essential gcc-x86-64-linux-gnu
-# rustup target add ${TARGET}
+# 3. Build only the dependencies to cache them
+RUN cargo build --release
+RUN rm src/*.rs
 
-ENV RUSTFLAGS='-C linker=x86_64-linux-gnu-gcc'
-ENV CC='gcc'
-ENV CC_x86_64_unknown_linux_musl=x86_64-linux-gnu-gcc
-ENV CC_x86_64-unknown-linux-musl=x86_64-linux-gnu-gcc
+# 4. Now that the dependency is built, copy your source code
+COPY ./src ./src
 
-RUN --mount=type=bind,source=src,target=src \
-  --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-  --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-  --mount=type=cache,target=/app/target/ \
-  --mount=type=cache,target=/usr/local/cargo/registry/ \
-  <<EOF
-set -e
-cargo build --locked --release 
-cp ./target/release/server /bin/server
-EOF
+# 5. Build for release.
+RUN rm ./target/release/deps/web_finder*
+RUN cargo build --release
 
-FROM debian:bullseye-slim AS final
+FROM debian:bookworm-slim
 
-RUN apt-get update; apt-get clean && \
-  apt-get install -y wget && \
-  apt install -y openssl && \
-  apt-get install -y gnupg && \
-  apt-get install -y gcc
-# Set the Chrome repo.
+RUN apt-get update; apt-get clean
+
+# Install wget.
+RUN apt-get install -y wget
+RUN apt install -y openssl
+RUN apt-get install -y gnupg
+RUN apt-get install -y gcc
+
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
 
 # Install Chrome.
 RUN apt-get update && apt-get -y install google-chrome-stable
 
-ARG UID=10001
-
-RUN adduser \
-  --disabled-password \
-  --gecos "" \
-  --home "/nonexistent" \
-  --shell "/sbin/nologin" \
-  --no-create-home \
-  --uid "${UID}" \
-  appuser
-
-USER appuser
-
-
-COPY --from=build /bin/server .
 COPY ./src/config ./src/config
 
-CMD ["./server"]
+COPY --from=builder /web_finder/target/release/web_finder .
+
+CMD ["./web_finder"]

@@ -49,7 +49,6 @@ pub mod databse_mod {
     pub async fn write_data(options: Options, db_option: DbOptions) -> Result<(), Box<dyn Error>> {
         let bson_document = to_document(&options).unwrap();
         let collection = get_collection(db_option).await?;
-        // collection.insert_one(bson_document, None).await?;
         let filter = doc! {"name": "eco"};
         let result = collection
             .find_one_and_replace(filter, bson_document, None)

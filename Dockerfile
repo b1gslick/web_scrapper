@@ -1,6 +1,5 @@
-ARG RUST_VERSION=1.74.1
-ARG APP_NAME=web_scraper
-FROM rust:${RUST_VERSION}-slim-bullseye AS build
+ARG APP_NAME=web_finder
+FROM rust:bookworm as build
 ARG APP_NAME
 WORKDIR /app
 
@@ -15,15 +14,9 @@ cargo build --release
 cp ./target/release/$APP_NAME /bin/server
 EOF
 
-FROM hthiemann/docker-chromium-armhf:latest as final
-
-# create simple user
-# ARG UID=10001
-# RUN adduser --disabled-password --gecos '' newuser --uid "${UID}"
-
-# USER newuser
-
-# copy binaries
+FROM debian:bookworm-slim as final
+# FROM hthiemann/docker-chromium-armhf:latest as final
+RUN apt-get update && apt-get install libxml2 -y
 COPY --from=build /bin/server /bin/
 
 CMD ["/bin/server"]

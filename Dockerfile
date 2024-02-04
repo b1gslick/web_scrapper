@@ -1,32 +1,29 @@
-FROM rust:bookworm as builder
+ARG RUST_VERSION=1.74.1
+ARG APP_NAME=web_scraper
+FROM rust:${RUST_VERSION}-slim-bullseye AS build
+ARG APP_NAME
+WORKDIR /app
 
-# 1. Create a new empty shell project
-RUN USER=root cargo new --bin web_finder
-WORKDIR /web_finder
+RUN --mount=type=bind,source=src,target=src \
+  --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
+  --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
+  --mount=type=cache,target=/app/target/ \
+  --mount=type=cache,target=/usr/local/cargo/registry/ \
+  <<EOF
+set -e
+cargo build --locked --release
+cp ./target/release/$APP_NAME /bin/server
+EOF
 
-# 2. Copy our manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
+FROM hthiemann/docker-chromium-armhf:latest as final
 
-# 3. Build only the dependencies to cache them
-RUN cargo build --release
-RUN rm src/*.rs
+# create simple user
+# ARG UID=10001
+# RUN adduser --disabled-password --gecos '' newuser --uid "${UID}"
 
-# 4. Now that the dependency is built, copy your source code
-COPY ./src ./src
+# USER newuser
 
-# 5. Build for release.
-RUN rm ./target/release/deps/web_finder*
-RUN cargo build --release
+# copy binaries
+COPY --from=build /bin/server /bin/
 
-# FROM debian:bookworm-slim
-FROM hthiemann/docker-chromium-armhf
-
-# RUN   apt-get update && \ 
-# apt install chromium -y
-
-COPY ./src/config ./src/config
-
-COPY --from=builder /web_finder/target/release/web_finder .
-
-CMD ["./web_finder"]
+CMD ["/bin/server"]

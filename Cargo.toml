@@ -11,7 +11,7 @@ mobot = "0.3.10"
 tokio = "1.35.1"
 scraper = "0.18.1"
 headless_chrome = "1.0.8"
-env_logger = "0.10.1"
+env_logger = "0.11.1"
 log = { version = "0.4.20", features = ["release_max_level_info"] }
 article_scraper = "2.0.0"
 url = "2.5.0"
@@ -22,8 +22,5 @@ serde = "1.0.195"
 mongodb = "2.8.0"
 bson = "2.8.1"
 openssl-sys = "0.9.98"
-openssl = { version = "0.10.62", features = ["vendored"] }
+openssl = { version = "0.10.63", features = ["vendored"] }
 libxml = "0.3.3"
-
-[build]
-rustflags = ["-Clinker=rust-lld"]

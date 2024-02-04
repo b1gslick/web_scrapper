@@ -19,11 +19,11 @@ COPY ./src ./src
 RUN rm ./target/release/deps/web_finder*
 RUN cargo build --release
 
-FROM debian:bookworm-slim
+# FROM debian:bookworm-slim
+FROM hthiemann/docker-chromium-armhf
 
-
-RUN   apt-get update && \ 
-  apt install chromium -y
+# RUN   apt-get update && \ 
+# apt install chromium -y
 
 COPY ./src/config ./src/config
 

@@ -4,8 +4,8 @@ name: Test,Build
 on: [push]
 
 jobs:
-  lint:
-    name: Lint
+  test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - name: Setup | Checkout
@@ -16,19 +16,9 @@ jobs:
           rust-version: stable
           components: clippy
       - name: Build | Lint
-        run: cargo clippy
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup | Checkout
-        uses: actions/checkout@v4
-      - name: Setup | Rust
-        uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: stable
-      - name: Build | Compile
-        run: cargo test
+        run: |
+          cargo clippy
+          cargo test
 
   push_to_registry:
     name: Push Docker image to Docker Hub

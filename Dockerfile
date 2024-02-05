@@ -17,7 +17,10 @@ EOF
 
 FROM debian:bookworm-slim as final
 # FROM hthiemann/docker-chromium-armhf:latest as final
-RUN apt-get update && apt-get install libxml2 -y && apt-get install chromium -y
+RUN apt-get update \
+  && apt-get install libxml2 -y \
+  && apt-get install chromium -y \
+  && apt-get install -y --reinstall ca-certificates
 COPY --from=build /bin/server /bin/
 
 CMD ["/bin/server"]

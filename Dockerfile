@@ -17,7 +17,7 @@ EOF
 
 FROM debian:bookworm-slim as final
 # FROM hthiemann/docker-chromium-armhf:latest as final
-RUN apt-get update && apt-get install libxml2 -y && apt-get install chromium-browser -y
+RUN apt-get update && apt-get install libxml2 -y && apt-get install chromium -y
 COPY --from=build /bin/server /bin/
 
 CMD ["/bin/server"]

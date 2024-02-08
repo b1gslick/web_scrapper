@@ -5,6 +5,7 @@ WORKDIR /app
 
 RUN apt-get install perl-base
 RUN --mount=type=bind,source=src,target=src \
+  --mount=type=bind,source=src/config,target=src/config \
   --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
   --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
   --mount=type=cache,target=/app/target/ \
@@ -22,7 +23,8 @@ RUN apt-get update \
   && apt-get install chromium -y \
   && apt-get install -y --reinstall ca-certificates
 
+RUN mkdir /src
+COPY src/config src/config
 COPY --from=build /bin/server /bin/
-COPY src/config /bin/src/config
 
 CMD ["/bin/server"]

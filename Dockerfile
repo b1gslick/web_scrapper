@@ -21,6 +21,8 @@ RUN apt-get update \
   && apt-get install libxml2 -y \
   && apt-get install chromium -y \
   && apt-get install -y --reinstall ca-certificates
+
 COPY --from=build /bin/server /bin/
+COPY src/config /bin/src/config
 
 CMD ["/bin/server"]

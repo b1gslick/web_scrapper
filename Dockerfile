@@ -1,53 +1,30 @@
+ARG APP_NAME=web_finder
+FROM rust:bookworm as build
+ARG APP_NAME
+WORKDIR /app
 
-FROM rust:bookworm as builder
+RUN apt-get install perl-base
+RUN --mount=type=bind,source=src,target=src \
+  --mount=type=bind,source=src/config,target=src/config \
+  --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
+  --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
+  --mount=type=cache,target=/app/target/ \
+  --mount=type=cache,target=/usr/local/cargo/registry/ \
+  <<EOF
+set -e
+cargo build --release
+cp ./target/release/$APP_NAME /bin/server
+EOF
 
-ARG TOKEN
-ARG MONGO_HOST
-ENV TOKEN=$TOKEN
-ENV MONGO_HOST=$MONGO_HOST
+FROM debian:bookworm-slim as final
+# FROM hthiemann/docker-chromium-armhf:latest as final
+RUN apt-get update \
+  && apt-get install libxml2 -y \
+  && apt-get install chromium -y \
+  && apt-get install -y --reinstall ca-certificates
 
-# 1. Create a new empty shell project
-RUN USER=root cargo new --bin web_finder
-WORKDIR /web_finder
+RUN mkdir /src
+COPY src/config src/config
+COPY --from=build /bin/server /bin/
 
-# 2. Copy our manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
-
-# 3. Build only the dependencies to cache them
-RUN cargo build --release
-RUN rm src/*.rs
-
-# 4. Now that the dependency is built, copy your source code
-COPY ./src ./src
-
-# 5. Build for release.
-RUN rm ./target/release/deps/web_finder*
-RUN cargo build --release
-
-FROM debian:bookworm-slim
-
-RUN apt-get update; apt-get clean
-
-ARG TOKEN
-ARG MONGO_HOST
-ENV TOKEN=$TOKEN
-ENV MONGO_HOST=$MONGO_HOST
-
-# Install wget.
-RUN apt-get install -y wget
-RUN apt install -y openssl
-RUN apt-get install -y gnupg
-RUN apt-get install -y gcc
-# Set the Chrome repo.
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
-
-# Install Chrome.
-RUN apt-get update && apt-get -y install google-chrome-stable
-
-COPY ./src/config ./src/config
-
-COPY --from=builder /web_finder/target/release/web_finder .
-
-CMD ["./web_finder"]
+CMD ["/bin/server"]

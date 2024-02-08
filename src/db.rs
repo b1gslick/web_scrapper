@@ -19,7 +19,14 @@ pub mod databse_mod {
     async fn get_connect() -> Result<mongodb::Client, Box<dyn Error>> {
         dotenv().ok();
 
-        let client_uri = env::var("MONGO_HOST").expect("You must set the mongo URL");
+        let db_srv = env::var("DB_SRV").unwrap_or("web-scraper".to_string());
+        let db_pass = env::var("DB_PASS").unwrap_or("password".to_string());
+        let db_host = env::var("DB_HOST").unwrap_or("localhost".to_string());
+
+        let client_uri = format!(
+            "mongodb+srv://{}:{}@{}/?retryWrites=true&w=majority",
+            db_srv, db_pass, db_host
+        );
 
         let options =
             ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
@@ -42,7 +49,6 @@ pub mod databse_mod {
     pub async fn write_data(options: Options, db_option: DbOptions) -> Result<(), Box<dyn Error>> {
         let bson_document = to_document(&options).unwrap();
         let collection = get_collection(db_option).await?;
-        // collection.insert_one(bson_document, None).await?;
         let filter = doc! {"name": "eco"};
         let result = collection
             .find_one_and_replace(filter, bson_document, None)

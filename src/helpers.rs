@@ -18,38 +18,32 @@ pub mod url_helper {
     }
 
     pub async fn get_news(
-        urls: Vec<String>,
+        checked_url: &str,
         kw: Vec<String>,
-    ) -> Result<(Vec<News>, Vec<String>), anyhow::Error> {
-        let mut result: Vec<News> = vec![];
-        let mut already_checked_url: Vec<String> = vec![];
-        for checked_url in urls.iter() {
-            let article_scraper = ArticleScraper::new(None).await;
-            let url = Url::parse(checked_url).unwrap();
-            let client = reqwest::Client::new();
-            let article = article_scraper.parse(&url, false, &client, None).await;
-            match article {
-                Ok(article) => {
-                    let title = article.title.unwrap_or_else(|| "not found".to_string());
-                    let html_body = article.html.unwrap_or_else(|| "not found".to_string());
-                    for word in kw.iter() {
-                        if title.contains(word) {
-                            result.push(make_news(&title, checked_url));
-                        }
-                        if html_body.contains(word) {
-                            result.push(make_news(&title, checked_url));
-                        }
+    ) -> Result<News, crate::types::error::Error> {
+        let article_scraper = ArticleScraper::new(None).await;
+        let url = Url::parse(checked_url).unwrap();
+        let client = reqwest::Client::new();
+        let article = article_scraper.parse(&url, false, &client, None).await;
+        match article {
+            Ok(article) => {
+                let title = article.title.unwrap_or_else(|| "not found".to_string());
+                let html_body = article.html.unwrap_or_else(|| "not found".to_string());
+                for word in kw.iter() {
+                    if title.contains(word) {
+                        return Ok(make_news(&title, checked_url));
                     }
-                    already_checked_url.push(checked_url.clone());
+                    if html_body.contains(word) {
+                        return Ok(make_news(&title, checked_url));
+                    }
                 }
-                Err(..) => {
-                    println!("Can't parse url {}", url);
-                    continue;
-                }
+                Err(crate::types::error::Error::NewNotFound)
+            }
+            Err(error) => {
+                println!("Can't parse url {} with \n{:?}", url, error);
+                Err(crate::types::error::Error::ParseUrl)
             }
         }
-
-        Ok((result, already_checked_url))
     }
 
     pub fn make_news(title: &str, url: &str) -> News {
@@ -75,7 +69,9 @@ pub mod url_helper {
             return false;
         }
         let re = Regex::new(r"^((http[s]?|ftp):\/)?\/?([^:\/\s]+)(:([^\/]*))?((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?$").unwrap();
-        let Some(_urls) = re.captures(url) else {return false};
+        let Some(_urls) = re.captures(url) else {
+            return false;
+        };
         true
     }
 
@@ -97,32 +93,42 @@ pub mod url_helper {
                 .sandbox(false)
                 .build()
                 .unwrap();
-            let browser = Browser::new(launch_options).unwrap();
-            let tab = browser.new_tab().unwrap();
-            tab.set_default_timeout(std::time::Duration::from_secs(120));
-            tab.navigate_to(url)?.wait_until_navigated()?;
-            let html_body = tab.wait_for_element("body").unwrap().get_content().unwrap();
-            let document = scraper::Html::parse_document(&html_body);
+            match Browser::new(launch_options) {
+                Ok(nb) => {
+                    let tab = nb.new_tab()?;
+                    tab.navigate_to(url)?.wait_until_navigated()?;
+                    let html_body = tab.wait_for_element("body").unwrap().get_content().unwrap();
+                    let document = scraper::Html::parse_document(&html_body);
 
-            for node in document.tree.nodes() {
-                if node.value().is_text() {
-                    for anc in node.ancestors() {
-                        if anc.value().is_element() {
-                            if let Some(url_path) = anc.value().as_element().unwrap().attr("href") {
-                                let full_news_path = build_url(url_path, url);
-                                if is_has_ban_word(url_path) && !url_path.contains("www.pnp.ru") {
-                                    continue;
-                                }
+                    for node in document.tree.nodes() {
+                        if node.value().is_text() {
+                            for anc in node.ancestors() {
+                                if anc.value().is_element() {
+                                    if let Some(url_path) =
+                                        anc.value().as_element().unwrap().attr("href")
+                                    {
+                                        let full_news_path = build_url(url_path, url);
+                                        if is_has_ban_word(url_path)
+                                            && !url_path.contains("www.pnp.ru")
+                                        {
+                                            continue;
+                                        }
 
-                                if is_valid_url(&full_news_path)
-                                    && !already_checked.contains(&full_news_path)
-                                    && !urls.contains(&full_news_path)
-                                {
-                                    urls.push(full_news_path.clone());
+                                        if is_valid_url(&full_news_path)
+                                            && !already_checked.contains(&full_news_path)
+                                            && !urls.contains(&full_news_path)
+                                        {
+                                            urls.push(full_news_path.clone());
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
+                }
+                Err(err) => {
+                    log::error!("{}", err);
+                    continue;
                 }
             }
         }

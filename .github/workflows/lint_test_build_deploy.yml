@@ -1,12 +1,7 @@
 ---
 name: Test,Build
 
-# on: [push]
-
-on:
-  push:
-    branches:
-      - main
+on: [push]
 
 jobs:
   test:

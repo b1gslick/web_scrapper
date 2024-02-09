@@ -1,0 +1,9 @@
+apiVersion: v2
+name: web-scrapper
+description: Helm chart for scrapper telegram bot for scrapping news from internet
+
+type: application
+
+version: 0.1.3
+
+appVersion: "0.1.1"

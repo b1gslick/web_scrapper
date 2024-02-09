@@ -4,6 +4,6 @@ description: Helm chart for scrapper telegram bot for scrapping news from intern
 
 type: application
 
-version: 0.1.2
+version: 0.1.3
 
 appVersion: "0.1.1"

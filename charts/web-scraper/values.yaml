@@ -4,14 +4,14 @@ image:
   repository: t1mon1106/web_scraper
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: kuber
+  tag: main
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
 env:
-  logLevel: DEBUG
+  logLevel: INFO
   tokenApi:
     secretName: bot-api
     key: token

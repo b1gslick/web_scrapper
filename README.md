@@ -1,3 +1,3 @@
-# Simple bot
+# b1gslick/web_scrapper
 
-Bot for scrapping
+[Source code of the application is here](https://github.com/b1gslick/web_scrapper)

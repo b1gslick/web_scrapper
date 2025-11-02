@@ -3,6 +3,16 @@ entries:
   web-scrapper:
   - apiVersion: v2
     appVersion: 0.1.1
+    created: "2025-11-02T14:55:49.508990723Z"
+    description: Helm chart for scrapper telegram bot for scrapping news from internet
+    digest: ac7b60b95e2c2efbf55050b582f811320309fb10919153774e6d1cd1126781e6
+    name: web-scrapper
+    type: application
+    urls:
+    - https://github.com/b1gslick/web_scrapper/releases/download/web-scrapper-0.1.4/web-scrapper-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: 0.1.1
     created: "2024-02-09T09:00:33.111779066Z"
     description: Helm chart for scrapper telegram bot for scrapping news from internet
     digest: c45439e2847fd902ad0c4db8bc0d36cdccfc9024bed0e92ff4303ab23167e27a
@@ -31,4 +41,4 @@ entries:
     urls:
     - https://github.com/b1gslick/web_scrapper/releases/download/web-scrapper-0.1.1/web-scrapper-0.1.1.tgz
     version: 0.1.1
-generated: "2024-02-09T09:00:33.112289195Z"
+generated: "2025-11-02T14:55:49.509012874Z"
